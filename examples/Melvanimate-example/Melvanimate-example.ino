@@ -25,14 +25,14 @@
 //  these are default effect... comment them out here and in setup to remove.  Thats it. 
 #include "effects/SwitchEffect.h"
 #include "effects/SimpleEffect.h"
-#include "effects/DMXEffect.h"
+//#include "effects/DMXEffect.h"
 #include "effects/AdalightEffect.h"
 #include "effects/UDPEffect.h"
 #include "effects/RainbowChase.h"
 #include "effects/Shapes.h"
 
 
-const uint16_t defaultpixelcount =  20;
+const uint16_t defaultpixelcount =  48;
 const char* devicename = "MyWS2812";  
 const char* ssid     = "ssid";
 const char* password = "password";
@@ -91,8 +91,8 @@ void setup()
   lights.Add("Shapes",       new Shapes); 
   lights.Add("Adalight",     new AdalightEffect(Serial, 115200));   //  default serial device and baud. 
   lights.Add("UDP",          new UDPEffect);                        
-  lights.Add("DMX",          new DMXEffect );                       // need to test - requires custom libs included
-
+ // lights.Add("DMX",          new DMXEffect );                       // need to test - requires custom libs included
+  lights.Add("Fire"          new SimpleEffect(FireEffectFn));
   
   lights.begin();
 
@@ -113,6 +113,73 @@ void loop()
   lights.loop();
 }
 
+
+/*-----------------------------------------------
+*                      FireEffect
+*------------------------------------------------*/
+void FireEffectFn(effectState &state, EffectHandler* ptr)
+{
+a
+  if (ptr) {
+
+    SimpleEffect& effect = *static_cast<SimpleEffect*>(ptr);
+
+    //  gets the next colour
+    //  dim is located in helperfunc;
+    FireBrightness = (effect.brightness());
+
+    switch (state) {
+
+    case PRE_EFFECT: {
+
+      // creates animator, default size is number of pixels. 
+      lights.createAnimator(); 
+
+      effect.SetTimeout(2000); //  set speed through the effect
+
+      lights.autoWait(); //  halts progress through states until animator has finished animating
+
+      if (animator) {
+
+        AnimEaseFunction easing = NeoEase::QuadraticInOut;
+
+        for (uint16_t pixel = 0; pixel < strip->PixelCount(); pixel++) {
+
+          RgbColor originalColor = strip->GetPixelColor(pixel);
+
+          AnimUpdateCallback animUpdate = [ = ](const AnimationParam & param) {
+
+            //float progress = easing(param.progress);
+            float progress = param.progress;
+            RgbColor updatedColor = RgbColor::LinearBlend(originalColor, newColor, progress);
+            strip->SetPixelColor(pixel, updatedColor);
+          };
+
+          animator->StartAnimation(pixel, 1000, animUpdate);
+
+        }
+      }
+
+      break;
+    }
+
+    case RUN_EFFECT: {
+      if (strip) {
+        strip->ClearTo(newColor);
+      }
+
+      lights.deleteAnimator();
+
+      break;
+    }
+    case POST_EFFECT: {
+
+      break;
+    }
+    case EFFECT_REFRESH: {
+      state = PRE_EFFECT;
+      break;
+    }
 
 /*-----------------------------------------------
 *                      offFn
