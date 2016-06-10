@@ -126,7 +126,7 @@ a
 
     //  gets the next colour
     //  dim is located in helperfunc;
-    RgbColor newColor = dim( effect.color(), effect.brightness() );
+    FireBrightness = (effect.brightness());
 
     switch (state) {
 
